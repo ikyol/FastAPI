@@ -1,3 +1,5 @@
 fastapi[all]
-uvicorn[standart]
+uvicorn
 python-multipart
+ormar[postgresql]
+psycopg2-binary

@@ -1,21 +1,20 @@
-from fastapi import APIRouter, FastAPI, UploadFile, File
-from typing import List
+from fastapi import APIRouter, UploadFile, File, Form
 import shutil
-
+from schemas import UploadVideo, Message, GetVideo
+from models import Video, User
 
 video_router = APIRouter()
 
 
 @video_router.post('/')
-async def root(file: UploadFile = File(...)):
+async def create_video(title: str = Form(...), description: str = Form(...), file: UploadFile = File(...)):
+    info = UploadVideo(title=title, description=description)
     with open(f'{file.filename}', 'wb') as buffer:
         shutil.copyfileobj(file.file, buffer)
-    return {'file_name': file.filename}
+    user = await User.objects.first()
+    return await Video.objects.create(file=file.filename, user=user, **info.dict())
 
 
-@video_router.post('/ing')
-async def upload_image(files: List[UploadFile] = File(...)):
-    for img in files:
-        with open(f'{img.filename}', 'wb') as buffer:
-            shutil.copyfileobj(img.file, buffer)
-    return {'file_name': 'hi'}
+@video_router.get('/video/{video_pk}', response_model=GetVideo, responses={404: {'model': Message}})
+async def get_video(video_pk: int):
+    return await Video.objects.select_related('user').get(pk=video_pk)
